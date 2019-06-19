@@ -53,7 +53,7 @@ class DetailsRepository(private val genresDao: GenreDao, private val genresId: L
 
     private fun loadVideosFromId() {
         uiScope.launch {
-            val videoResponse = MoviesApi.retrofitService.getMovieVideos(movieId)
+            val videoResponse = MoviesApi.retrofitService.getMovieVideosAsync(movieId)
             try {
                 val videos = videoResponse.await().videos
                 _videos.value = videos

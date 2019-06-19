@@ -31,7 +31,7 @@ interface MoviesService {
             Deferred<GenresResponse>
 
     @GET("movie/{movie_id}/videos?$API_KEY&$LANGUAGE")
-    fun getMovieVideos(@Path("movie_id") movieId: Long) : Deferred<VideosResponse>
+    fun getMovieVideosAsync(@Path("movie_id") movieId: Long) : Deferred<VideosResponse>
 }
 
 object MoviesApi {
