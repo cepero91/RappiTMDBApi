@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string-array name="movies_categories">
+    <item>Popular Movies</item>
+    <item>Top Rated Movies</item>
+    <item>Upcoming Movies</item>
+  </string-array>
+</resources>
