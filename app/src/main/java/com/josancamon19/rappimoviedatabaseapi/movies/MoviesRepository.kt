@@ -4,7 +4,9 @@ import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import com.josancamon19.rappimoviedatabaseapi.data.database.AppDatabase
 import com.josancamon19.rappimoviedatabaseapi.data.models.Genre
 import com.josancamon19.rappimoviedatabaseapi.data.models.Movie
@@ -15,8 +17,13 @@ import com.soywiz.klock.days
 import com.soywiz.klock.parse
 import kotlinx.coroutines.*
 import timber.log.Timber
+import javax.inject.Inject
 
-class MoviesRepository(application: Application) {
+class MoviesRepository @Inject constructor(
+    application: Application,
+    private val db: AppDatabase,
+    private val moviesApi: MoviesApi
+) {
 
     companion object {
         private const val KEY_DATE_UPDATED: String = "key_date_updated"
@@ -26,7 +33,6 @@ class MoviesRepository(application: Application) {
     private var viewModelJob = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
 
-    private var db: AppDatabase = AppDatabase.getInstance(application.applicationContext)
     private val prefs = application.getSharedPreferences("genres", Context.MODE_PRIVATE)!!
     private val connectivityManager = application
         .applicationContext
@@ -38,7 +44,7 @@ class MoviesRepository(application: Application) {
     }
 
 
-    private val _movies = MutableLiveData<List<Movie>>()
+    private val _movies = MediatorLiveData<List<Movie>>()
     val movies: LiveData<List<Movie>>
         get() = _movies
 
@@ -95,7 +101,7 @@ class MoviesRepository(application: Application) {
     }
 
     private suspend fun loadMoviesFromNetwork(category: String) {
-        val response = MoviesApi.retrofitService.getMoviesAsync(category)
+        val response = moviesApi.getMoviesAsync(category)
         try {
             val moviesResponse = response.await()
             val movies = moviesResponse.movies
@@ -116,11 +122,13 @@ class MoviesRepository(application: Application) {
     private fun loadMovies(category: String) {
         uiScope.launch {
             val newMovies = loadMoviesFromDatabase(category)
-            _movies.value = newMovies
+            _movies.addSource(newMovies) {
+                _movies.value = it
+            }
         }
     }
 
-    private suspend fun loadMoviesFromDatabase(category: String): List<Movie> {
+    private suspend fun loadMoviesFromDatabase(category: String): LiveData<List<Movie>> {
         return withContext(Dispatchers.IO) {
             db.moviesDao.getMoviesFromCategory(category)
         }
@@ -141,7 +149,7 @@ class MoviesRepository(application: Application) {
 
     private fun loadGenres() {
         uiScope.launch {
-            val genres = MoviesApi.retrofitService.getGenresAsync()
+            val genres = moviesApi.getGenresAsync()
             try {
                 val genresList = genres.await().genres
                 saveGenres(genresList)
@@ -164,11 +172,15 @@ class MoviesRepository(application: Application) {
             return
         }
         uiScope.launch {
-            _movies.value = loadFromDatabaseQuery(query)
+            val queryResult = loadFromDatabaseQuery(query)
+            _movies.addSource(queryResult) {
+                _movies.value = it
+                _movies.removeSource(queryResult)
+            }
         }
     }
 
-    private suspend fun loadFromDatabaseQuery(query: String): List<Movie> {
+    private suspend fun loadFromDatabaseQuery(query: String): LiveData<List<Movie>> {
         return withContext(Dispatchers.IO) {
             val category = when (_categorySelected.value!!) {
                 "Popular Movies" -> "popular"

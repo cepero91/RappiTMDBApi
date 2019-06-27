@@ -9,7 +9,12 @@ import com.josancamon19.rappimoviedatabaseapi.data.network.MoviesApi
 import kotlinx.coroutines.*
 import timber.log.Timber
 
-class DetailsRepository(private val genresDao: GenreDao, private val genresId: List<Int>, private val movieId: Long){
+class DetailsRepository(
+    private val genresDao: GenreDao,
+    private val genresId: List<Int>,
+    private val movieId: Long,
+    private val moviesApi: MoviesApi
+) {
 
     private val viewModelJob = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
@@ -53,7 +58,7 @@ class DetailsRepository(private val genresDao: GenreDao, private val genresId: L
 
     private fun loadVideosFromId() {
         uiScope.launch {
-            val videoResponse = MoviesApi.retrofitService.getMovieVideosAsync(movieId)
+            val videoResponse = moviesApi.getMovieVideosAsync(movieId)
             try {
                 val videos = videoResponse.await().videos
                 _videos.value = videos

@@ -15,15 +15,20 @@ import androidx.navigation.fragment.findNavController
 import com.josancamon19.rappimoviedatabaseapi.R
 import com.josancamon19.rappimoviedatabaseapi.data.database.AppDatabase
 import com.josancamon19.rappimoviedatabaseapi.data.models.Movie
+import com.josancamon19.rappimoviedatabaseapi.data.network.MoviesApi
 import com.josancamon19.rappimoviedatabaseapi.databinding.FragmentDetailsBinding
+import com.josancamon19.rappimoviedatabaseapi.di.viewmodel.ViewModelFactory
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+import dagger.android.support.DaggerFragment
+import javax.inject.Inject
 
-class DetailsFragment : Fragment() {
+class DetailsFragment : DaggerFragment() {
     private lateinit var binding: FragmentDetailsBinding
+    @Inject
+    lateinit var moviesApi: MoviesApi
     private lateinit var viewModel: DetailsViewModel
-    private lateinit var videosAdapter: VideosListAdapter
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_details, container, false)
@@ -33,20 +38,13 @@ class DetailsFragment : Fragment() {
         val args = DetailsFragmentArgs.fromBundle(arguments!!)
         val movie = args.movie
         binding.movie = movie
-        setupRecycler()
         setupViewModel(movie)
         return binding.root
     }
 
-    private fun setupRecycler() {
-        // videosAdapter = VideosListAdapter()
-        // binding.recyclerVideos.setHasFixedSize(true)
-        // binding.recyclerVideos.adapter = videosAdapter
-    }
-
     private fun setupViewModel(movie: Movie) {
         val dao = AppDatabase.getInstance(context!!.applicationContext).genresDao
-        val factory = DetailsViewModelFactory(dao, movie.genreIds, movie.id)
+        val factory = DetailsViewModelFactory(dao, movie.genreIds, movie.id, moviesApi)
 
         viewModel = ViewModelProviders.of(this, factory).get(DetailsViewModel::class.java)
         viewModel.getMovieGenres().observe(this, Observer { movieGenres ->
@@ -58,7 +56,7 @@ class DetailsFragment : Fragment() {
         viewModel.getVideos().observe(this, Observer {
             viewModel.getVideos().removeObservers(this)
             // It could be a recycler but it is not a good idea to fit a scrollable inside a scrollable
-            //videosAdapter.submitList(it)
+            // also removing the recycler scrollable will remove the main recycler ability(recycler)
             if (!it.isNullOrEmpty()) {
                 binding.videosTitle.visibility = VISIBLE
                 it.forEach { video ->

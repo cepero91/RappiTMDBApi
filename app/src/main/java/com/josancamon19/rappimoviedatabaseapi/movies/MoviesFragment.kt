@@ -12,7 +12,6 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.databinding.DataBindingUtil
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.findNavController
@@ -21,13 +20,20 @@ import androidx.recyclerview.widget.RecyclerView
 import com.josancamon19.rappimoviedatabaseapi.R
 import com.josancamon19.rappimoviedatabaseapi.data.models.Movie
 import com.josancamon19.rappimoviedatabaseapi.databinding.FragmentMoviesBinding
+import com.josancamon19.rappimoviedatabaseapi.di.viewmodel.ViewModelFactory
+import dagger.android.support.DaggerFragment
 import timber.log.Timber
+import javax.inject.Inject
 
-class MoviesFragment : Fragment(), MoviesListAdapter.OnMovieClickListener, AdapterView.OnItemSelectedListener {
+class MoviesFragment : DaggerFragment(), MoviesListAdapter.OnMovieClickListener, AdapterView.OnItemSelectedListener {
 
 
     private lateinit var binding: FragmentMoviesBinding
+
+    @Inject
+    lateinit var viewModelFactory: ViewModelFactory
     private lateinit var viewModel: MoviesViewModel
+
     private lateinit var adapter: MoviesListAdapter
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -64,7 +70,6 @@ class MoviesFragment : Fragment(), MoviesListAdapter.OnMovieClickListener, Adapt
 
     private fun setupSearchView() {
         binding.searchView.setOnSearchClickListener {
-            Timber.d("search view clicked")
             binding.spinner.visibility = GONE
         }
         binding.searchView.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
@@ -105,8 +110,7 @@ class MoviesFragment : Fragment(), MoviesListAdapter.OnMovieClickListener, Adapt
     }
 
     private fun setupViewModel() {
-        Timber.d("setting up ViewModel")
-        viewModel = ViewModelProviders.of(this).get(MoviesViewModel::class.java)
+        viewModel = ViewModelProviders.of(this, viewModelFactory).get(MoviesViewModel::class.java)
         viewModel.getMovies().observe(this, Observer {
             adapter.submitList(it)
             Timber.d("List submitted")

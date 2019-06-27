@@ -11,10 +11,10 @@ interface MovieDao {
     fun getMovies(): List<Movie>
 
     @Query("SELECT * FROM movies WHERE category=:category")
-    fun getMoviesFromCategory(category: String): List<Movie>
+    fun getMoviesFromCategory(category: String): LiveData<List<Movie>>
 
     @Query("SELECT * FROM movies WHERE original_title LIKE :query AND category=:category")
-    fun queryTitle(query: String, category:String) : List<Movie>
+    fun queryTitle(query: String, category:String) : LiveData<List<Movie>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertMovies(movies: List<Movie>)

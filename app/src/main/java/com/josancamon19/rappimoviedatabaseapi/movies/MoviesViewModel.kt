@@ -3,20 +3,18 @@ package com.josancamon19.rappimoviedatabaseapi.movies
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.ViewModel
 import com.josancamon19.rappimoviedatabaseapi.data.models.Movie
 import timber.log.Timber
+import javax.inject.Inject
 
 
-class MoviesViewModel(application: Application) : AndroidViewModel(application) {
+class MoviesViewModel @Inject constructor(private val repository:  MoviesRepository) : ViewModel() {
 
-    var repository: MoviesRepository = MoviesRepository(application)
-
-    init {
-        Timber.d("MoviesViewModel Initiated")
-    }
+    private var movies : LiveData<List<Movie>> = repository.movies
 
     fun getMovies(): LiveData<List<Movie>> {
-        return repository.movies
+        return movies
     }
 
     fun setCategory(category: String) {
